@@ -40,7 +40,7 @@ class SquareGrid():
 
             self.__grid[random_pos].set_mined()
             
-            neighbours = self.get_neighbours(random_x, random_y)
+            neighbours = self.get_neighbours((random_x, random_y))
 
             for pos in neighbours:
                 neighbours[pos].increment_adjacents()
@@ -56,15 +56,15 @@ class SquareGrid():
         self.reset()
         self.generate_game(n_mines, seed)
 
-    def mark(self, x, y):
+    def mark(self, pos):
         # Player marking of tile as a mine.
-        self.__grid[(x,y)].update_mark() 
+        self.__grid[pos].update_mark() 
 
-    def reveal(self, x, y):
+    def reveal(self, pos):
         # Sets the visibility of target tile to True, returning the Tile
         # for further inspection by the game logic.
 
-        revealed_tile = self.__grid[(x, y)]
+        revealed_tile = self.__grid[pos]
         revealed_tile.set_visible()
         return revealed_tile
 
@@ -112,9 +112,12 @@ class SquareGrid():
 
         return set(to_reveal)
 
-    def get_neighbours(self, x, y):
+    def get_neighbours(self, pos):
 
-        #Generates all the adjacent tiles of a tile given its x, y position.
+        # Generates a dictionary of all the adjacent tiles of a tile given its 
+        # x, y position, with the key being their positions.
+
+        x, y = pos
 
         neighbours = {}
 
@@ -126,6 +129,15 @@ class SquareGrid():
 
         return neighbours
 
+    def get_mines(self):
+        return self.__n_mines
+
+    def get_tile(self, pos):
+        return self.__grid[pos]
+
+    def is_marked(self, pos):
+        return self.__grid[pos].get_marked()
+
 if __name__ == "__main__":
 
 
@@ -135,7 +147,7 @@ if __name__ == "__main__":
 
     print(da_brint)
 
-    grid.reveal(4,3)
+    grid.reveal((4,3))
 
     da_brint = grid.game_print(debug=False)
 
