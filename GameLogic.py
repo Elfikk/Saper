@@ -6,6 +6,8 @@ class Game():
 # __to_reveal: Set of tile ids that must be uncovered by the player to win.
 # __n_moves: Number of moves taken by the player. Unused currently.
 # __mines_counter: Number of mines - Number of tiles marked by the player.
+# __changed_tiles: Dictionary of keys with Tile ids, whose values are the 
+#                  new status of the corresponding Tile.
 
     def __init__(self, grid):
         self.__grid = grid
@@ -17,6 +19,7 @@ class Game():
         self.__visited = set()
         self.__n_moves = 0
         self.__mines_counter = self.__grid.get_mines()
+        self.__changed_tiles = {}
 
     def reset(self):
         self.__grid.regenerate_game()
@@ -32,8 +35,10 @@ class Game():
         tile = self.__grid.get_tile(id)
         if tile.get_marked():
             self.__mines_counter -= 1
+            self.__changed_tiles[id] = "X"
         else:
             self.__mines_counter += 1
+            self.__changed_tiles[id] = "?"
 
     def reveal_tile(self, id):
         # For clicking on a tile that has not been made visible yet. If a tile
@@ -48,8 +53,11 @@ class Game():
         revealed_tile = self.__grid.reveal(id)
         # If the revealed tile has a mine on it, the game ends.
         if revealed_tile.get_mined():
+            self.__changed_tiles[id] = "m"
             return "Game Over. Hit a mine."
         
+        self.__changed_tiles[id] = str(revealed_tile.get_adjacents())
+
         self.__to_reveal.remove(id)
         self.__visited.add(id)
 
@@ -94,3 +102,11 @@ class Game():
 
     def get_mine_counter(self):
         return self.__mines_counter
+
+    def get_changes(self):
+        changes_copy = self.__changed_tiles.copy()
+        self.__changed_tiles = {}
+        return changes_copy
+
+if __name__ == "__main__":
+    print(help(Game))

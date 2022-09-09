@@ -1,7 +1,7 @@
 from GameLogic import Game
 from Grid import SquareGrid
 
-#TextGame.py rewritten with 
+#TextGame.py rewritten with Game().
 
 width, height, mines, seed = 5, 5, 5, 2
 
