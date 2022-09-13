@@ -52,9 +52,9 @@ class SquareGrid():
             tile = self.__grid[pos]
             tile.reset()
 
-    def regenerate_game(self, n_mines, seed = None):
+    def regenerate_game(self, seed = None):
         self.reset()
-        self.generate_game(n_mines, seed)
+        self.generate_game(self.__n_mines, seed)
 
     def mark(self, pos):
         # Player marking of tile as a mine.

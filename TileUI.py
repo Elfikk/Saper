@@ -8,7 +8,7 @@ class TileUI(Sprite):
 
         image_base = load(default_texture)
         image_texture = image_base.get_texture()
-        self.__mag = 1
+        self.__mag = mag #What a mistake to make this always 1!
         self.__status = status
 
         if self.__mag != 1:
@@ -25,7 +25,7 @@ class TileUI(Sprite):
 
         if self.__mag != 1:
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) 
-            texture.width = image_texture.width * self.__mag
+            image_texture.width = image_texture.width * self.__mag
             image_texture.height = image_texture.height * self.__mag
         
         self.image = image_texture

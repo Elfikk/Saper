@@ -20,6 +20,7 @@ class Game():
         self.__n_moves = 0
         self.__mines_counter = self.__grid.get_mines()
         self.__changed_tiles = {}
+        self.__tripped_mines = {}
 
     def reset(self):
         self.__grid.regenerate_game()
@@ -54,6 +55,7 @@ class Game():
         # If the revealed tile has a mine on it, the game ends.
         if revealed_tile.get_mined():
             self.__changed_tiles[id] = "m"
+            self.__tripped_mines[id] = "m"
             return "Game Over. Hit a mine."
         
         self.__changed_tiles[id] = str(revealed_tile.get_adjacents())
@@ -99,6 +101,9 @@ class Game():
         # The win condition is all mineless tiles being revealed, corresponding
         # to the list of all tiles left to reveal being empty.
         return len(self.__to_reveal) == 0
+
+    def is_lost(self):
+        return bool(len(self.__tripped_mines))
 
     def get_mine_counter(self):
         return self.__mines_counter

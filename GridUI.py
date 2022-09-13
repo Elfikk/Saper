@@ -22,7 +22,8 @@ class SquareGridUI():
 
     square_pixels = 32
 
-    def __init__(self, width, height, x_padding, y_padding, mag = 1):
+    def __init__(self, width, height, x_padding_left, x_padding_right, \
+        y_padding_bottom, y_padding_top, mag = 1):
 
         self.__batch = Batch()
         self.__tiles = {}
@@ -34,28 +35,27 @@ class SquareGridUI():
 
         for x in range(width):
             for y in range(height):
-                self.__tiles[(x,y)] = TileUI(x * self.__square_length + x_padding, \
-                                            SCREEN_HEIGHT - self.__square_length * y - y_padding,\
+                self.__tiles[(x,y)] = TileUI(x * self.__square_length + x_padding_left, \
+                                            SCREEN_HEIGHT - self.__square_length * y - y_padding_top,\
                                             self.__status_to_path["?"], self.__batch, mag)
 
         self.__grid_height = height * self.__square_length 
-        # print(self.__grid_height)
-        self.__x_pad = x_padding
-        self.__y_pad = y_padding
+        self.__x_pad_left = x_padding_left
+        self.__y_pad_top = y_padding_top
+        self.__y_pad_bottom = y_padding_bottom
+
+        self.__grid_bounds = {"x_min": x_padding_left - self.__square_length / 2, 
+                              "x_max": SCREEN_WIDTH - x_padding_right + self.__square_length,
+                              "y_min": y_padding_bottom - 1.5 * self.__square_length,
+                              "y_max": SCREEN_HEIGHT - y_padding_top + self.__square_length}
 
     def draw(self):
         self.__batch.draw()
 
     def coords_to_id(self, x, y):
-        x_s, y_s = (x - self.__x_pad, y - self.__grid_height - self.__y_pad)
-        return ((x_s + self.__square_length//2) // self.__square_length, \
-                (-y_s+self.__square_length//2) // self.__square_length)
-
-    def get_x_pad(self):
-        return self.__x_pad
-
-    def get_y_pad(self):
-        return self.__y_pad
+        x_s, y_s = (x - self.__x_pad_left, y - self.__grid_height - self.__y_pad_bottom)
+        return (int((x_s + self.__square_length//2) // self.__square_length), \
+                int((-y_s - 3 * self.__square_length//2) // self.__square_length))
 
     def get_tile_status(self, id):
         return self.__tiles[id].get_status()
@@ -65,3 +65,11 @@ class SquareGridUI():
             tile = self.__tiles[id]
             new_status = changed_tiles[id]
             tile.update(self.__status_to_path[new_status], new_status)
+
+    def get_bounds(self):
+        return self.__grid_bounds
+
+    def reset(self):
+        for id in self.__tiles:
+            tile = self.__tiles[id]
+            tile.update(self.__status_to_path["?"], "?")
