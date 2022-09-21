@@ -45,17 +45,17 @@ class SquareGridUI():
         self.__y_pad_bottom = y_padding_bottom
 
         self.__grid_bounds = {"x_min": x_padding_left - self.__square_length / 2, 
-                              "x_max": SCREEN_WIDTH - x_padding_right + self.__square_length,
-                              "y_min": y_padding_bottom - 1.5 * self.__square_length,
-                              "y_max": SCREEN_HEIGHT - y_padding_top + self.__square_length}
+                              "x_max": SCREEN_WIDTH - x_padding_right - 0.5 * self.__square_length,
+                              "y_min": y_padding_bottom + 0.5 * self.__square_length,
+                              "y_max": SCREEN_HEIGHT - y_padding_top + 0.5 * self.__square_length}
 
     def draw(self):
         self.__batch.draw()
 
     def coords_to_id(self, x, y):
-        x_s, y_s = (x - self.__x_pad_left, y - self.__grid_height - self.__y_pad_bottom)
+        x_s, y_s = (x - self.__x_pad_left, y - self.__grid_height - self.__grid_bounds["y_min"])
         return (int((x_s + self.__square_length//2) // self.__square_length), \
-                int((-y_s - 3 * self.__square_length//2) // self.__square_length))
+                int((-y_s) // self.__square_length))
 
     def get_tile_status(self, id):
         return self.__tiles[id].get_status()

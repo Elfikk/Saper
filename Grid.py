@@ -112,6 +112,19 @@ class SquareGrid():
 
         return set(to_reveal)
 
+    def generate_mined_tiles(self):
+
+        # Generates the set of all tiles with a mine (for game end).
+
+        mines = []
+
+        for pos in self.__grid:
+            tile = self.__grid[pos]
+            if tile.get_mined():
+                mines.append(pos)
+
+        return set(mines)
+
     def get_neighbours(self, pos):
 
         # Generates a dictionary of all the adjacent tiles of a tile given its 

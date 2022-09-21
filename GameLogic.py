@@ -100,7 +100,12 @@ class Game():
     def is_won(self):
         # The win condition is all mineless tiles being revealed, corresponding
         # to the list of all tiles left to reveal being empty.
-        return len(self.__to_reveal) == 0
+        if len(self.__to_reveal) == 0:
+            mines = self.__grid.generate_mined_tiles()
+            for pos in mines:
+                self.__changed_tiles[pos] = "X"
+            return True
+        return False
 
     def is_lost(self):
         return bool(len(self.__tripped_mines))
@@ -112,6 +117,12 @@ class Game():
         changes_copy = self.__changed_tiles.copy()
         self.__changed_tiles = {}
         return changes_copy
+
+    def get_to_reveal(self):
+        return self.__to_reveal
+
+    def get_neighbours(self, id):
+        return self.__grid.get_neighbours(id)
 
 if __name__ == "__main__":
     print(help(Game))
