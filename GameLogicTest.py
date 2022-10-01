@@ -24,7 +24,7 @@ if outcome is not None:
 while game_ended is False:
 
     print("")
-    print(game_handler.game_print().split("\n"))
+    print(game_handler.game_print())#.split("\n"))
 
     choice = int(input("To mark a tile, input 0. To reveal a tile, input 1. "))
 

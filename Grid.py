@@ -151,6 +151,28 @@ class SquareGrid():
     def is_marked(self, pos):
         return self.__grid[pos].get_marked()
 
+    def get_all_tiles(self):
+        return self.__grid
+    
+    def get_all_visible_tiles(self):
+        visible_tiles = set()
+        for id in self.__grid:
+            if self.__grid[id].get_visible():
+                visible_tiles.add(id)
+
+    def is_satisfied(self, id):
+        #Check if the adjacency of a mine is satisfied.
+        tile = self.__grid[id]
+        mines = tile.get_adjacents()        
+
+        flag_counter = 0
+        tile_neighbours = self.get_neighbours(id)
+        for neighbour_id in tile_neighbours:
+            if tile_neighbours[neighbour_id].get_marked():
+                flag_counter += 1
+        
+        return mines == flag_counter
+
 if __name__ == "__main__":
 
 

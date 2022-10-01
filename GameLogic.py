@@ -124,5 +124,14 @@ class Game():
     def get_neighbours(self, id):
         return self.__grid.get_neighbours(id)
 
+    def get_all_visible_tiles(self):
+        return self.__grid.get_all_tiles()
+
+    def is_satisfied(self, id):
+        return self.__grid.is_satisfied(id)
+
+    def get_adjacents(self, id):
+        return self.__grid.get_adjacents()
+
 if __name__ == "__main__":
     print(help(Game))
