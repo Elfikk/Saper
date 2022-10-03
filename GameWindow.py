@@ -106,7 +106,9 @@ class GameWindow(pyglet.window.Window):
                         if not self.__game_handler.is_marked(tile_id):
                             self.__game_handler.mark(tile_id)
                     elif move_type == 1:
-                        self.__game_handler.reveal_tile(tile_id)
+                        tile_status = self.__grid_ui.get_tile_status(tile_id)
+                        if tile_status == "?":
+                            self.__game_handler.reveal_tile(tile_id)
                     elif move_type == 2:
                         self.__game_handler.reveal_adjacents(tile_id)
                 self.__none_streak += 1

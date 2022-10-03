@@ -58,3 +58,19 @@ class SolvingAdapter():
             return self.__moves.popitem()
         except KeyError:
             return None
+
+    def get_tile_identity(self, id):
+        tile = self.__game.get_tile(id)
+        if tile.get_marked():
+            return 1
+        if tile.get_visible():
+            return 0
+        return None
+
+    def partially_satisfied(self, id):
+        # Partial satisfaction - if enough flags are marked but some 
+        # neighbours are not revealed.
+        return self.__game.partially_satisfied(id)
+
+    def is_marked(self, id):
+        return self.__game.is_marked(id)

@@ -128,13 +128,21 @@ class Game():
         return self.__grid.get_all_visible_tiles()
 
     def is_satisfied(self, id):
+        # A tile is satisfied if its neighbours are all marked/revealed 
+        # whilst respecting the adjacency requirement.
         return self.__grid.is_satisfied(id)
+
+    def partially_satisfied(self, id):
+        return self.__grid.partially_satisfied(id)
 
     def get_adjacents(self, id):
         return self.__grid.get_adjacents(id)
 
     def is_marked(self, id):
         return self.__grid.is_marked(id)
+
+    def get_tile(self, id):
+        return self.__grid.get_tile(id)
 
 if __name__ == "__main__":
     print(help(Game))

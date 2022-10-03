@@ -170,11 +170,26 @@ class SquareGrid():
         mines = tile.get_adjacents()        
 
         flag_counter = 0
+        hidden_neighbours = 0
         tile_neighbours = self.get_neighbours(id)
         for neighbour_id in tile_neighbours:
             if tile_neighbours[neighbour_id].get_marked():
                 flag_counter += 1
-        
+            elif not tile_neighbours[neighbour_id].get_visible():
+                hidden_neighbours += 1
+
+        return mines == flag_counter and hidden_neighbours == 0
+
+    def partially_satisfied(self, id):
+        tile = self.__grid[id]
+        mines = tile.get_adjacents()        
+
+        flag_counter = 0        
+        tile_neighbours = self.get_neighbours(id)
+        for neighbour_id in tile_neighbours:
+            if tile_neighbours[neighbour_id].get_marked():
+                flag_counter += 1
+
         return mines == flag_counter
 
 if __name__ == "__main__":

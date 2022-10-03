@@ -56,6 +56,8 @@ class Solver():
             # The 2 1s on right hand side both indicate the right unmarked tile
             # is a mine. No need to add them both to the matrix.
             new_row = tuple(new_row)
+            if id == (1,2):
+                print("(1,2) info:", new_row)
             gaussian_rows.add(new_row)
 
         gaussian_rows = list(gaussian_rows)
@@ -88,10 +90,20 @@ class Solver():
             row_coeff = {index: row[index] for index in range(len(row))}
             row_coeff_copy = row_coeff.copy() #Copy for iteration.
 
+            # The tile identity may have been figured out previously, in a 
+            # previous solve run. Iterate through the coefficients and fill
+            # info with known ones.
+            for index in row_coeff:
+                tile_identity = info[index]
+                if tile_identity == None:
+                    tile_id = self.__column_to_id[index]
+                    tile_identity = self.__adapter.get_tile_identity(tile_id)
+                    info[index] = tile_identity
+
             # print(row_coeff)
 
             for index in row_coeff_copy:
-                tile_identity = info[index]
+                tile_identity = info[index]                    
 
                 # If the tiles identity has been figured out, we adjust
                 # the rest of the row to make sure we extract as much
@@ -130,8 +142,16 @@ class Solver():
                             info[index] = 1
                         elif row_coeff[index] > 0:
                             info[index] = 0
+
+            if row[0] != 0:
+                print("(0,1) status")
+                print("current info:", info)
+                print(row)
+                print(zero_coeffs)
+                print(checksum)
         
         print("Da info:", info)
+        print("Conversion", self.__column_to_id)
 
         # And now (with the editor position opening up), having collected
         # all the information, we pack it neatly for the adapter to pass it.
@@ -142,6 +162,29 @@ class Solver():
                     self.__to_mark.add(tile_id)
                 elif info[index] == 0:
                     self.__to_reveal.add(tile_id)
+
+    def partial_satisfaction_solve(self):
+        # There isnt a single possible row echelon form of the augmented
+        # matrix - it's possible that the generated matrix may not see 
+        # a piece of information that it could, if rows were added in a 
+        # different order. We therefore check additionally if any 
+        # non-redundant tiles satisfy their adjacency, but don't have
+        # a revealed tile.
+
+        # This is a bodge job for time being, as I am not using REDUCED
+        # row echelon form. With reduction, will always be able to find
+        # the maximum amount of information.
+
+        for tile_id in self.__info_set:
+            print(tile_id)
+            if self.__adapter.partially_satisfied(tile_id):
+                id_set = set()
+                id_set.add(tile_id)
+                useful_neighbours, adjacency = self.__adapter.get_useful_neighbours(id_set)
+                # print(useful_neighbours)
+                for neighbour_id in useful_neighbours:
+                    if not self.__adapter.is_marked(neighbour_id):
+                        self.__to_reveal.add(neighbour_id)
 
     def get_moves(self):
         return self.__to_reveal, self.__to_mark
@@ -154,8 +197,10 @@ class Solver():
     def solve(self):
         self.reset()
         self.info_setup()
+        print("Is (1,2) in the set",  bool((1,2) in self.__info_set))
         A, b = self.generate_adjacency_matrix()
         self.gaussian_solver(A, b)
+        self.partial_satisfaction_solve()
         print("To mark:", self.__to_mark)
         print("To reveal:", self.__to_reveal)
         return self.get_moves()
