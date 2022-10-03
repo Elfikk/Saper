@@ -4,9 +4,13 @@ class SolvingAdapter():
 
         visible_tiles = game.get_all_visible_tiles()
 
-        self.__visible = set(visible_tiles.keys())
+        self.__visible = set(visible_tiles)
         self.__redundant = set()
         self.__game = game #Held to be able to reference the game in methods.
+
+        self.__to_reveal = set()
+        self.__to_mark = set()
+        self.__moves = {}
 
     def check_redundant(self, id):
         if self.__game.is_satisfied(id):
@@ -36,3 +40,21 @@ class SolvingAdapter():
     def get_adjacents(self, id):
         return self.__game.get_adjacents(id)
     
+    def get_moves(self, solver):
+
+        visible_tiles = self.__game.get_all_visible_tiles()
+        self.__visible = set(visible_tiles)
+
+        print(self.__visible)
+        print(len(self.__visible))
+
+        self.__to_reveal, self.__to_mark = solver.solve()
+        self.__moves = {**{id: 1 for id in self.__to_reveal},
+                        **{id: 0 for id in self.__to_mark}
+                        }
+
+    def next_move(self):
+        try:
+            return self.__moves.popitem()
+        except KeyError:
+            return None

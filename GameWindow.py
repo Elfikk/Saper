@@ -1,9 +1,12 @@
 import pyglet
+from pyglet.window import key
 from GameConstants import SCREEN_WIDTH, SCREEN_HEIGHT, FRAME_RATE
 from Grid import SquareGrid
 from GridUI import SquareGridUI
 from GameLogic import Game
 from MetaUI import MetaUI
+from MinesweeperSolver import Solver
+from AdapterSolver import SolvingAdapter
 from time import time
 
 class GameWindow(pyglet.window.Window):
@@ -18,6 +21,10 @@ class GameWindow(pyglet.window.Window):
         self.__timer = 0
         self.__clicks = 0
         self.__game_ended = False
+        self.__solver_on = False
+        self.__adapter = False
+        self.__solver = False
+        self.__none_streak = 0
 
         self.__grid_bounds = self.__grid_ui.get_bounds()
         self.__restard_bounds = self.__meta_ui.get_restart_bounds()
@@ -30,37 +37,50 @@ class GameWindow(pyglet.window.Window):
         self.__meta_ui.draw()
 
     def on_mouse_press(self, x, y, button, modifiers):
-        x_min, x_max, y_min, y_max = self.__grid_bounds["x_min"], \
-            self.__grid_bounds["x_max"], self.__grid_bounds["y_min"],\
-            self.__grid_bounds["y_max"]
 
-        print(x,y)
-        print(int(self.__timer))
+        if not self.__solver_on:
 
-        if x_min <= x < x_max and y_min < y <= y_max: #If clicking the grid.
-            if not self.__game_ended:
-                # self.__clicks += 1
-                id = self.__grid_ui.coords_to_id(x,y)
-                tile_status = self.__grid_ui.get_tile_status(id)
-                print(id)
+            x_min, x_max, y_min, y_max = self.__grid_bounds["x_min"], \
+                self.__grid_bounds["x_max"], self.__grid_bounds["y_min"],\
+                self.__grid_bounds["y_max"]
+
+            print(x,y)
+            print(int(self.__timer))
+
+            if x_min <= x < x_max and y_min < y <= y_max: #If clicking the grid.
+                if not self.__game_ended:
+                    # self.__clicks += 1
+                    id = self.__grid_ui.coords_to_id(x,y)
+                    tile_status = self.__grid_ui.get_tile_status(id)
+                    print(id)
+                    if button == pyglet.window.mouse.LEFT:
+                        self.__clicks += 1
+                        if tile_status == "?":
+                            self.__game_handler.reveal_tile(id)
+                        else:
+                            self.__game_handler.reveal_adjacents(id)
+                    elif button == pyglet.window.mouse.RIGHT:
+                        self.__clicks += 1
+                        if tile_status == "?" or tile_status == "X":
+                            self.__game_handler.mark(id)
+            
+            x_min, x_max, y_min, y_max = self.__restard_bounds["x_min"], \
+                self.__restard_bounds["x_max"], self.__restard_bounds["y_min"],\
+                self.__restard_bounds["y_max"]
+
+            if x_min <= x <= x_max and y_min <= y <= y_max: #If clicking the restart button.
                 if button == pyglet.window.mouse.LEFT:
-                    self.__clicks += 1
-                    if tile_status == "?":
-                        self.__game_handler.reveal_tile(id)
-                    else:
-                        self.__game_handler.reveal_adjacents(id)
-                elif button == pyglet.window.mouse.RIGHT:
-                    self.__clicks += 1
-                    if tile_status == "?" or tile_status == "X":
-                        self.__game_handler.mark(id)
-        
-        x_min, x_max, y_min, y_max = self.__restard_bounds["x_min"], \
-            self.__restard_bounds["x_max"], self.__restard_bounds["y_min"],\
-            self.__restard_bounds["y_max"]
+                    self.reset()
 
-        if x_min <= x <= x_max and y_min <= y <= y_max: #If clicking the restart button.
-            if button == pyglet.window.mouse.LEFT:
-                self.reset()
+    def on_key_press(self, symbol, modifiers):
+        if symbol == key.SPACE:
+            self.__solver_on = True
+            self.__adapter = SolvingAdapter(self.__game_handler)
+            self.__solver = Solver(self.__adapter)
+        if symbol == key.Q:
+            self.__solver_on = False
+        # if symbol == key.A:
+        #     print(self.__grid.)
 
     def update(self, _):
         changed_tiles = self.__game_handler.get_changes()
@@ -69,9 +89,30 @@ class GameWindow(pyglet.window.Window):
         if self.__clicks:
             if not self.__game_ended:
                 self.__timer = time() - self.__start_stamp
-                self.__meta_ui.update(int(self.__timer), self.__game_handler.get_mine_counter())
+                current_counter = self.__game_handler.get_mine_counter()
+                counter = current_counter if current_counter > 0 else 0
+                self.__meta_ui.update(int(self.__timer), counter)
         else:
-            self.__start_stamp = time()        
+            self.__start_stamp = time()      
+
+        if self.__solver_on:
+            if not self.__game_ended:
+                next_move = self.__adapter.next_move()
+                print(next_move)
+                if next_move != None:
+                    self.__none_streak = 0
+                    tile_id, move_type = next_move
+                    if move_type == 0:
+                        if not self.__game_handler.is_marked(tile_id):
+                            self.__game_handler.mark(tile_id)
+                    elif move_type == 1:
+                        self.__game_handler.reveal_tile(tile_id)
+                    elif move_type == 2:
+                        self.__game_handler.reveal_adjacents(tile_id)
+                self.__none_streak += 1
+                if self.__none_streak > 2:
+                    self.__none_streak = 0
+                    self.__adapter.get_moves(self.__solver)
 
     def reset(self):
 
@@ -83,6 +124,11 @@ class GameWindow(pyglet.window.Window):
         self.__game_handler.reset()
         self.__grid_ui.reset()
         self.__meta_ui.reset()
+
+        self.__solver_on = False
+        self.__adapter = False
+        self.__solver = False
+        self.__none_streak = 0
 
 if __name__ == "__main__":
 
@@ -112,6 +158,7 @@ if __name__ == "__main__":
     y_pad = 156 * factor
     mag = 3 * factor
 
+    #Who put the mag factor down as the damn seed. Dum ass.
     grid = SquareGrid(8, 8, 10, mag)
 
     game = Game(grid)
@@ -122,7 +169,7 @@ if __name__ == "__main__":
 
     window = GameWindow(grid_ui, game, meta_ui)
 
-    pyglet.clock.schedule_interval(window.update, 1/FRAME_RATE)
+    pyglet.clock.schedule_interval(window.update, 1)
     pyglet.app.run()
 
     

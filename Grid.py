@@ -148,6 +148,9 @@ class SquareGrid():
     def get_tile(self, pos):
         return self.__grid[pos]
 
+    def get_adjacents(self, pos):
+        return self.get_tile(pos).get_adjacents()
+
     def is_marked(self, pos):
         return self.__grid[pos].get_marked()
 
@@ -159,6 +162,7 @@ class SquareGrid():
         for id in self.__grid:
             if self.__grid[id].get_visible():
                 visible_tiles.add(id)
+        return visible_tiles
 
     def is_satisfied(self, id):
         #Check if the adjacency of a mine is satisfied.
