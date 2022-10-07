@@ -11,6 +11,7 @@ class SolvingAdapter():
         self.__to_reveal = set()
         self.__to_mark = set()
         self.__moves = {}
+        self.__previous_moves = {}
 
     def check_redundant(self, id):
         if self.__game.is_satisfied(id):
@@ -53,11 +54,22 @@ class SolvingAdapter():
                         **{id: 0 for id in self.__to_mark}
                         }
 
+        if self.__previous_moves == self.__moves:
+            self.__moves = {}
+        else:
+            self.__previous_moves = {}
+
     def next_move(self):
         try:
-            return self.__moves.popitem()
+            new_move = self.__moves.popitem()
+            self.__previous_moves[new_move[0]] = new_move[1]
+            return new_move
         except KeyError:
             return None
+
+    def get_guess(self, solver):
+        tile_id, move_type = solver.guess()
+        self.__moves = {tile_id: move_type}
 
     def get_tile_identity(self, id):
         tile = self.__game.get_tile(id)
@@ -74,3 +86,11 @@ class SolvingAdapter():
 
     def is_marked(self, id):
         return self.__game.is_marked(id)
+
+    def get_hidden_tiles(self):
+        return self.__game.get_hidden_tiles()
+
+    def remaining_mines(self):
+        return self.__game.get_mine_counter()
+
+    

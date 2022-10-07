@@ -144,5 +144,8 @@ class Game():
     def get_tile(self, id):
         return self.__grid.get_tile(id)
 
+    def get_hidden_tiles(self):
+        return self.__grid.get_hidden_tiles()
+
 if __name__ == "__main__":
     print(help(Game))

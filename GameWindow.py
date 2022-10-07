@@ -74,9 +74,10 @@ class GameWindow(pyglet.window.Window):
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.SPACE:
-            self.__solver_on = True
-            self.__adapter = SolvingAdapter(self.__game_handler)
-            self.__solver = Solver(self.__adapter)
+            if not self.__game_ended:
+                self.__solver_on = True
+                self.__adapter = SolvingAdapter(self.__game_handler)
+                self.__solver = Solver(self.__adapter)
         if symbol == key.Q:
             self.__solver_on = False
         # if symbol == key.A:
@@ -89,9 +90,12 @@ class GameWindow(pyglet.window.Window):
         if self.__clicks:
             if not self.__game_ended:
                 self.__timer = time() - self.__start_stamp
+                if self.__timer > 999:
+                    self.__timer = 999
                 current_counter = self.__game_handler.get_mine_counter()
                 counter = current_counter if current_counter > 0 else 0
-                self.__meta_ui.update(int(self.__timer), counter)
+                counter_string = (3 - len(str(counter))) * "0" + str(counter)
+                self.__meta_ui.update(int(self.__timer), counter_string)
         else:
             self.__start_stamp = time()      
 
@@ -112,9 +116,19 @@ class GameWindow(pyglet.window.Window):
                     elif move_type == 2:
                         self.__game_handler.reveal_adjacents(tile_id)
                 self.__none_streak += 1
-                if self.__none_streak > 2:
-                    self.__none_streak = 0
+                if self.__none_streak == 2:
+                    # self.__none_streak = 0
                     self.__adapter.get_moves(self.__solver)
+                # if 2 nones in a row, take a guess.
+                # taking a guess takes generating all possible 
+                # configurations for remaining floor, and finding where
+                # mines/safe tiles occur most frequently.
+                elif self.__none_streak == 3:
+                    self.__adapter.get_guess(self.__solver)
+
+            else:
+                self.__solver_on = False
+
 
     def reset(self):
 
@@ -135,6 +149,7 @@ class GameWindow(pyglet.window.Window):
 if __name__ == "__main__":
 
     # # Expert Board (31 x 16 with 99 mines)
+    # # Solver works on expert board too (but needs guessing badly)
 
     # factor = SCREEN_WIDTH / 1280
 
@@ -171,7 +186,7 @@ if __name__ == "__main__":
 
     window = GameWindow(grid_ui, game, meta_ui)
 
-    pyglet.clock.schedule_interval(window.update, 1)
+    pyglet.clock.schedule_interval(window.update, 1/FRAME_RATE)
     pyglet.app.run()
 
     

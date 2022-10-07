@@ -164,6 +164,14 @@ class SquareGrid():
                 visible_tiles.add(id)
         return visible_tiles
 
+    def get_hidden_tiles(self):
+        hidden_tiles = set()
+        for id in self.__grid:
+            tile = self.__grid[id]
+            if not tile.get_visible() and not tile.get_marked():
+                hidden_tiles.add(id)
+        return hidden_tiles
+
     def is_satisfied(self, id):
         #Check if the adjacency of a mine is satisfied.
         tile = self.__grid[id]
