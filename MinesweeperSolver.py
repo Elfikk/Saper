@@ -227,6 +227,9 @@ class Solver():
         # 7. Mark/reveal the likeliest tile and add guess to the board.
         #    Can now rerun Gaussian, with new information.
         
+        # Works great if the there's only a few remaining tiles on the
+        # boundary, not so great otherwise...
+
         hidden_tiles = self.__adapter.get_hidden_tiles()
 
         print("Hidden tiles", hidden_tiles)
@@ -238,13 +241,17 @@ class Solver():
         total_legit_combs = 0
 
         #Running total for each id of tile.
-        comb_frequency = {hidden_tile: 0 for hidden_tile in hidden_tiles}
-        mark_frequency = {hidden_tile: 0 for hidden_tile in hidden_tiles}
+        comb_frequency = {hidden_tile: 0 for hidden_tile in hidden_tiles \
+                          if hidden_tile in boundary_neighbours}
+        mark_frequency = comb_frequency.copy()
+        # mark_frequency = {hidden_tile: 0 for hidden_tile in hidden_tiles \
+        #                   if hidden_tile in boundary_neighbours}
 
         #Indices used in combinations correspond to hidden tile ids 1 to 1.
-        index_to_id = {i: tile_id for i, tile_id in enumerate(hidden_tiles)}
-        id_to_index = {index_to_id[index]: index for index in \
-                       range(len(index_to_id))}
+        index_to_id = {i: tile_id for i, tile_id in \
+                       enumerate(comb_frequency.keys())}
+        id_to_index = {tile_id: index for index, tile_id\
+                       in index_to_id.items()}
 
         boundary_conditions = set()
 
@@ -266,45 +273,93 @@ class Solver():
         #Generating all possible mine configurations 
 
         total_mines = self.__adapter.remaining_mines()
-        mine_combs = combinations(hidden_tiles, total_mines)
 
-        print("Boundary conditions:", boundary_conditions)
+        for mines in range(1, min(total_mines + 1, len(new_info))):
+            mine_combs = combinations(hidden_tiles, mines)
 
-        #Checking whether each configuration is legit.
-        for config in mine_combs:
-            config = config[0]
-            config_dict = {i: 1 if i in config else 0 for i in \
-                           range(len(index_to_id))}
-            conditions_satisfied = True
-            counter = 0
-            print(config)
-            print(config_dict)
-            while conditions_satisfied and counter < len(boundary_conditions):
-                next_condition = boundary_conditions[counter]
-                print("Current condition", next_condition)
-                mine_sum = sum([config_dict[j] for j in next_condition[:-1]])
-                if mine_sum != next_condition[-1]:
-                    conditions_satisfied = False
-                counter += 1
-            
-            if conditions_satisfied:
-                total_legit_combs += 1
-                for index in index_to_id:
-                    tile_id = index_to_id[index]
-                    if index in config_dict:
-                        comb_frequency[tile_id] += 1
-                        if comb_frequency[tile_id] > max_freq:
-                            max_freq = comb_frequency[tile_id]
-                            max_freq_id = tile_id
-                            move_type = 0
-                    else:
-                        mark_frequency[tile_id] += 1
-                        if mark_frequency[tile_id] > max_freq:
-                            max_freq = mark_frequency[tile_id]
-                            max_freq_id = tile_id
-                            move_type = 1
+            print(list(combinations(hidden_tiles, mines)))
+
+            # print("Boundary conditions:", boundary_conditions)
+
+            #Checking whether each configuration is legit.
+            for config in mine_combs:
+                config = config[0]
+                config_dict = {i: 1 if i in config else 0 for i in \
+                            range(len(index_to_id))}
+                conditions_satisfied = True
+                counter = 0
+                # print(config)
+                # print(config_dict)
+                while conditions_satisfied and counter < len(boundary_conditions):
+                    next_condition = boundary_conditions[counter]
+                    # print("Current condition", next_condition)
+                    mine_sum = sum([config_dict[j] for j in next_condition[:-1]])
+                    if mine_sum != next_condition[-1]:
+                        conditions_satisfied = False
+                    counter += 1
+                
+                if conditions_satisfied:
+                    total_legit_combs += 1
+                    for index in index_to_id:
+                        tile_id = index_to_id[index]
+                        if index in config_dict:
+                            comb_frequency[tile_id] += 1
+                            if comb_frequency[tile_id] > max_freq:
+                                max_freq = comb_frequency[tile_id]
+                                max_freq_id = tile_id
+                                move_type = 0
+                        else:
+                            mark_frequency[tile_id] += 1
+                            if mark_frequency[tile_id] > max_freq:
+                                max_freq = mark_frequency[tile_id]
+                                max_freq_id = tile_id
+                                move_type = 1
 
         return max_freq_id, move_type
+
+    def heuristic_guess(self):
+        # Instead of going through every possible combination, each
+        # adjacent tile contributes to an average mine probability. 
+        # The tile with the lowest mine probability is revealed (this
+        # gets you more information so a Gaussian method could 
+        # potentially be applied).
+
+        hidden_tiles = self.__adapter.get_hidden_tiles()
+
+        boundary_neighbours, adjacency_dict = \
+            self.__adapter.get_useful_neighbours(self.__info_set)        
+
+        remaining_mines = self.__adapter.remaining_mines()
+        initial_prob = remaining_mines / len(hidden_tiles)
+        tile_estimates = {hidden_tile: initial_prob for hidden_tile \
+                          in hidden_tiles}
+
+        print(tile_estimates)
+
+        tile_counters = {hidden_tile: 1 for hidden_tile in hidden_tiles}
+
+        for hint_tile_id in adjacency_dict:
+            adjacents = self.__adapter.get_adjacents(hint_tile_id)
+            to_guess_key_list = [tile_id for tile_id in \
+                adjacency_dict[hint_tile_id] if tile_id in hidden_tiles]
+            adjacents = adjacents + (len(to_guess_key_list) \
+                                    - len(adjacency_dict[hint_tile_id]))
+            for neighbour in to_guess_key_list:
+                tile_estimates[neighbour] += adjacents / len(to_guess_key_list)
+                tile_counters[neighbour] += 1
+
+        tile_probs = {hidden_tile: tile_estimates[hidden_tile] / tile_counters[hidden_tile]\
+                      for hidden_tile in hidden_tiles}
+
+        minimum_prob = 1
+        to_mark_id = (0,0)
+        for tile_id in tile_probs:
+            next_prob = tile_probs[tile_id]
+            if next_prob < minimum_prob:
+                to_mark_id = tile_id
+                minimum_prob = next_prob
+
+        return to_mark_id
 
 def row_echelon(A, b):
     #A is the matrix representing the mine adjacencies.

@@ -71,6 +71,10 @@ class SolvingAdapter():
         tile_id, move_type = solver.guess()
         self.__moves = {tile_id: move_type}
 
+    def get_heuristic_guess(self, solver):
+        tile_id = solver.heuristic_guess()
+        self.__moves = {tile_id: 1}
+
     def get_tile_identity(self, id):
         tile = self.__game.get_tile(id)
         if tile.get_marked():

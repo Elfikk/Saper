@@ -124,8 +124,8 @@ class GameWindow(pyglet.window.Window):
                 # configurations for remaining floor, and finding where
                 # mines/safe tiles occur most frequently.
                 elif self.__none_streak == 3:
-                    self.__adapter.get_guess(self.__solver)
-
+                    self.__adapter.get_heuristic_guess(self.__solver)
+                    self.__none_streak = 0
             else:
                 self.__solver_on = False
 
